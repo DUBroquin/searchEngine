@@ -1,5 +1,5 @@
 {
-    "name": "donovan/search-engine",
+    "name": "dubroquin/search-engine",
     "description": "A search engine for Vuetable2",
     "type": "library",
     "license": "MIT",
@@ -10,11 +10,5 @@
         }
     ],
     "minimum-stability": "dev",
-    "require": {},
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "git@bitbucket.org:deliverup_dbroquin/searchengine.git"
-        }
-    ]
+    "require": {}
 }

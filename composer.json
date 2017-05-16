@@ -1,0 +1,20 @@
+{
+    "name": "donovan/search-engine",
+    "description": "A search engine for Vuetable2",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Donovan Broquin",
+            "email": "dbroquin@deliverup.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git@bitbucket.org:deliverup_dbroquin/searchengine.git"
+        }
+    ]
+}

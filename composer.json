@@ -9,7 +9,12 @@
             "email": "dbroquin@deliverup.com"
         }
     ],
+    "autoload": {
+        "psr-4": {
+            "Dbroquin\\SearchEngine\\": "src/"
+        }
+    },
     "minimum-stability": "stable",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "require": {}
 }

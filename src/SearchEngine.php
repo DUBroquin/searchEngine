@@ -8,6 +8,9 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Search engine for Vuetable 2
+ */
 class SearchEngine
 {
     protected $_request;
@@ -19,12 +22,15 @@ class SearchEngine
     {
         $this->_request = $request;
         $this->_relationships = $relationships;
-
     }
 
-    // Datas
-    public function make()
-    {
+    /**
+     * Create function from query 
+     * with model contain in $_request
+     *
+     * @return object
+     */
+    public function makeWithQuery(){
         $model = $this->getModel();
 
         $query = $model->with($this->_relationships);
@@ -113,9 +119,90 @@ class SearchEngine
         return $pagination;
     }
 
+    /**
+     * Create datatable from gived collection
+     *
+     * @param mixed[] $collection Collection
+     * @return object
+     */
+    public function makeWithCollection($collection){
+            
+        if (is_array($collection)) {
+             $collection = collect($collection);
+        }
+
+        // Filter section
+        if($this->_request->exists('filter')){
+            $mapped = $collection->map(function($items, $key){
+                foreach($items as $item){
+                    if(str_contains(Str::lower($item), Str::lower($this->_request->filter))) {
+                        return $items;
+                    }
+                }
+            });
+            
+            // Cleanup collection
+            $mapped = $mapped->reject(function ($row, $key) {
+                return is_null($row);
+            });
+
+        }else{
+            $mapped = $collection;
+        };
+
+        // Sort section
+        if($this->_request->has('sort')){
+            $sorts = explode(',', $this->_request->sort);
+
+            foreach ($sorts as $sort) {
+                list($sortCol, $sortDir) = explode('|', $sort);
+
+                if($sortDir == 'asc'){
+                    $sorted = $mapped->sortBy($sortCol);
+                }else{
+                    $sorted = $mapped->sortByDesc($sortCol);
+                }
+            
+            }
+        }else{
+            $sorted = $mapped;
+        }
+
+        // Clean up collection keys
+        $final = collect();
+
+        foreach($sorted as $sort){
+            $final->push($sort);
+        }
+
+        // Pagination time
+        $perPage = $this->_request->has('per_page') ? (int)$this->_request->per_page : null;
+        $pagination = new LengthAwarePaginator(
+            $final->forPage(Paginator::resolveCurrentPage(), $perPage),
+            $final->count(), $perPage,
+            Paginator::resolveCurrentPage(),
+            ['path' => Paginator::resolveCurrentPath()]
+        );
+
+
+        $pagination->appends([
+            'sort' => $this->_request->sort,
+            'filter' => $this->_request->filter,
+            'per_page' => $this->_request->per_page
+        ]);
+
+
+        return $pagination;
+
+    }
+
     // Get model from request
-    private function getModel()
-    {
+    /**
+     * Undocumented function
+     *
+     * @return void
+     */
+    private function getModel(){
         $namespace = 'Deliverup\\' . Str::ucfirst(str_singular($this->_request->input('model')));
 
         return new $namespace;
@@ -123,8 +210,12 @@ class SearchEngine
     }
 
     // Get keyword form request
-    private function getKeyWords()
-    {
+    /**
+     * Undocumented function
+     *
+     * @return void
+     */
+    private function getKeyWords(){
         // Define all seperators
         $separators = [':', '-', '_', ';'];
 
@@ -159,6 +250,12 @@ class SearchEngine
     }
 
     // Get model's columns
+    /**
+     * Undocumented function
+     *
+     * @param boolean $related
+     * @return void
+     */
     private function getColumns($related = false){
         if(!$related){
             return DB::getSchemaBuilder()->getColumnListing($this->_request->model);
@@ -174,12 +271,23 @@ class SearchEngine
 
     }
 
-    // Clean model name
+    /**
+     * Clean model name
+     *
+     * @param [type] $name
+     * @return str
+     */
     private function cleanName($name){
         return str_plural(str_singular($name));
     }
 
-    // Create array of key value
+    /**
+     * Create array of key value
+     *
+     * @param [type] $cols
+     * @param [type] $keys
+     * @return void
+     */
     private function createWhereQuery($cols, $keys){
         $search = collect();
 
@@ -198,6 +306,13 @@ class SearchEngine
         return $search;
     }
 
+    /**
+     * Undocumented function
+     *
+     * @param [type] $relationships
+     * @param [type] $keys
+     * @return void
+     */
     private function createRelatedWhere($relationships, $keys){
         // Init return collection
         $related = collect();
@@ -207,23 +322,5 @@ class SearchEngine
         }
 
         return $related;
-    }
-
-    // Create pagination for collection
-    // Maybe useless
-    private function paginate($items, $perPage)
-    {
-        if (is_array($items)) {
-            $items = collect($items);
-        }
-
-        return new LengthAwarePaginator(
-            $items->forPage(Paginator::resolveCurrentPage(), $perPage),
-            $items->count(), $perPage,
-            Paginator::resolveCurrentPage(),
-            ['path' => Paginator::resolveCurrentPath()]
-        );
-
-
     }
 }

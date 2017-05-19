@@ -2,6 +2,7 @@
 
 namespace Dbroquin\SearchEngine;
 
+use Illuminate\Console\DetectsApplicationNamespace;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -11,15 +12,16 @@ use Illuminate\Support\Facades\DB;
 /**
  * Search engine for Vuetable 2
  */
-class SearchEngine
-{
+class SearchEngine{
+
+    use DetectsApplicationNamespace;
+
     protected $_request;
     protected $_relationships;
     protected $_separator;
 
     // Constuctor
-    public function __construct($request, $relationships)
-    {
+    public function __construct($request, $relationships){
         $this->_request = $request;
         $this->_relationships = $relationships;
     }
@@ -200,10 +202,12 @@ class SearchEngine
     /**
      * Undocumented function
      *
-     * @return void
+     * @return string 
      */
     private function getModel(){
-        $namespace = 'Deliverup\\' . Str::ucfirst(str_singular($this->_request->input('model')));
+        $appName = $this->getAppNamespace();
+
+        $namespace = $appName . Str::ucfirst(str_singular($this->_request->input('model')));
 
         return new $namespace;
 

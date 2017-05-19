@@ -21,7 +21,7 @@ class SearchEngine{
     protected $_separator;
 
     // Constuctor
-    public function __construct($request, $relationships){
+    public function __construct($request, $relationships = []){
         $this->_request = $request;
         $this->_relationships = $relationships;
     }

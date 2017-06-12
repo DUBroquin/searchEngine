@@ -236,7 +236,7 @@ class SearchEngine{
 
                 foreach ($parts as $part) {
                     if (!empty($part)) {
-                        $datas->push('%'.trim($part), "\t".'%');
+                        $datas->push('%'.trim($part).'%');
                     }
                 }
             }
@@ -245,7 +245,7 @@ class SearchEngine{
             $words = explode(' ', $this->_request->filter);
 
             foreach ($words as $word) {
-                $datas->push('%'.trim($word), "\t".'%');
+                $datas->push('%'.trim($word).'%');
             }
 
         }

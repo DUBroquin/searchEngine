@@ -13,7 +13,10 @@ class SearchEngineServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        // Publish Vue.js files
+        $this->publishes([
+            __DIR__.'/resources/' => resource_path('/assets/js/components/commons')
+        ], 'searchEngine');
     }
 
     /**

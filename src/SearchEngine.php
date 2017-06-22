@@ -32,93 +32,13 @@ class SearchEngine{
      *
      * @return object
      */
-    public function makeWithQuery(){
-        $model = $this->getModel();
-
-        $query = $model->with($this->_relationships);
-
-        // Sort section
-        if($this->_request->has('sort')){
-            $sorts = explode(',', $this->_request->sort);
-
-            foreach ($sorts as $sort) {
-                list($sortCol, $sortDir) = explode('|', $sort);
-                if (str_contains($sortCol, '.')) {
-                    $col = explode('.', $sortCol);
-
-                    $query = $query->whereHas(str_singular($col[0]), function ($q) use ($col, $sortDir) {
-                        $q->orderBy($col[1], $sortDir);
-                    })->orderBy($col[1], $sortDir);
-
-                } else {
-                    $query = $query->orderBy($sortCol, $sortDir);
-                }
-            }
+    public function makeWithQuery($query = null)
+    {
+        if ($query == null) {
+            return $this->engine($this->getModel()->with($this->_relationships));
+        }else{
+            return $this->engine($query);
         }
-
-        // Filter section
-        if ($this->_request->exists('filter')) {
-
-            // Get key words
-            $keys = $this->getKeyWords();
-
-            // Get models columns
-            $mainCols = $this->getColumns();
-
-            // Format where clause
-            $whereQuery = $this->createWhereQuery($mainCols, $keys);
-
-            $primary = $query->where(function($q) use($whereQuery){
-                foreach ($whereQuery as $item){
-                    $q->orWhere($item->column, 'like', $item->value);
-                }
-            });
-
-            if($primary->get()->isEmpty()){
-                // Local stock relationships
-                $relationships = $this->_relationships;
-
-                // Get relationships columns
-                $relatedCols = $this->getColumns(true);
-
-                // Get where clauses
-                $relatedWhereQuerys = $this->createRelatedWhere($relatedCols, $keys);
-
-                #dd($relatedWhereQuerys);
-
-                foreach($relationships as $relationship){
-                    $fields = $relatedWhereQuerys[$relationship];
-
-                    // Reset query
-                    $query = $model->with($this->_relationships);
-
-                    $try = $query->whereHas($relationship, function($q) use($fields){
-                        $q->where(function($sq) use($fields){
-                            foreach($fields as $field){
-                                $sq->orWhere($field->column, 'like', $field->value);
-                            }
-                        });
-                    });
-
-                   if(!$try->get()->isEmpty()){
-                       $query = $try;
-                   }
-                }
-            }else{
-                $query = $primary;
-            }
-        };
-
-        // Terminate with pagination
-        $perPage = $this->_request->has('per_page') ? (int)$this->_request->per_page : null;
-        $pagination = $query->paginate($perPage);
-        $pagination->appends([
-            'sort' => $this->_request->sort,
-            'filter' => $this->_request->filter,
-            'per_page' => $this->_request->per_page
-        ]);
-
-        return $pagination;
     }
 
     /**
@@ -196,6 +116,68 @@ class SearchEngine{
 
         return $pagination;
 
+    }
+
+    private function engine($query){
+        // Sort section
+        if ($this->_request->has('sort')) {
+            $sorts = explode(',', $this->_request->sort);
+
+            foreach ($sorts as $sort) {
+                list($sortCol, $sortDir) = explode('|', $sort);
+                if (str_contains($sortCol, '.')) {
+                    $col = explode('.', $sortCol);
+
+                    $query = $query->whereHas(str_singular($col[0]), function ($q) use ($col, $sortDir) {
+                        $q->orderBy($col[1], $sortDir);
+                    })->orderBy($col[1], $sortDir);
+
+                } else {
+                    $query = $query->orderBy($sortCol, $sortDir);
+                }
+            }
+        }
+
+        // Filter section
+        if ($this->_request->exists('filter') and $this->_request->filter !== null) {
+
+            // Get key words
+            $keys = $this->getKeyWords();
+
+            // Get models columns
+            $mainCols = $this->getColumns();
+            $relatedCols = $this->getColumns(true);
+
+            $query = $query->where(function ($q) use ($mainCols, $relatedCols, $keys) {
+                foreach ($keys as $key) {
+                    // Iterate through main
+                    foreach ($mainCols as $col) {
+                        $q->orWhere($col, 'like', $key);
+                    }
+
+                    // Iterate through relationships
+                    foreach ($this->_relationships as $relationship) {
+                        $q->where(function ($rq) use ($relationship, $key, $relatedCols) {
+                            $rq->whereHas($relationship, function ($rrq) use ($relationship, $key, $relatedCols) {
+                                foreach ($relatedCols[$relationship] as $rCol) {
+                                    $rrq->orWhere($rCol, 'like', $key);
+                                }
+                            });
+                        });
+                    }
+                };
+            });
+        }
+
+        // Terminate with pagination
+        $perPage = $this->_request->has('per_page') ? (int)$this->_request->per_page : null;
+        $pagination = $query->paginate($perPage);
+        $pagination->appends([
+            'sort' => $this->_request->sort,
+            'filter' => $this->_request->filter,
+            'per_page' => $this->_request->per_page
+        ]);
+        return $pagination;
     }
 
     // Get model from request

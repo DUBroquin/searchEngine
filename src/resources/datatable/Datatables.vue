@@ -12,7 +12,7 @@
     import CallbacksMixins from './Mixins/CallbackMixins.vue';
 
     export default{
-        mixins:[CallbacksMixins.callback],
+        mixins:[CallbacksMixins.callbacks],
         render(h) {
             return h(
                 'div',
@@ -169,6 +169,13 @@
             },
             onChangePage (page) {
                 this.$refs.vuetable.changePage(page)
+            },
+
+            /*------------------------------------------------
+             *   Internal
+             */
+            reload(id){
+                Vue.nextTick(() => this.$refs[id].refresh())
             },
 
         }

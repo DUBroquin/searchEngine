@@ -1,6 +1,6 @@
 <script>
     export default{
-        callback:({
+        callbacks:({
             methods:{
                 allCaps(content){
                     return content.toUpperCase();
@@ -13,3 +13,10 @@
 
     }
 </script>
+
+<style>
+    .mailTo{
+        color: black;
+        border-bottom: 1px dashed black;
+    }
+</style>

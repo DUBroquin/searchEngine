@@ -35,7 +35,10 @@ class SearchEngine{
     public function makeWithQuery($query = null)
     {
         if ($query == null) {
-            return $this->engine($this->getModel()->with($this->_relationships));
+            $model = $this->getModel();
+            $query = $model->with($this->_relationships);
+            
+            return $this->engine($query);
         }else{
             return $this->engine($query);
         }
